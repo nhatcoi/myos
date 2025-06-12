@@ -527,11 +527,11 @@ uint32_t HandleInterrupt(uint32_t esp) {
 ## 🏆 Credits
 
 ### 👥 Nhóm Phát Triển
-- **Nhat**: Kernel & Memory Management
-- **Ngoc**: Keyboard Driver & Input Handling  
-- **Sang**: Mathematical Algorithms & Logic
-- **Minh**: User Interface & Display
-- **Quynh**: Testing & Documentation
+- **Nhat**: Kernel & Memory Management - MAIN.md
+- **Ngoc**: Keyboard Driver & Input Handling  - INPUT.md
+- **Sang**: Mathematical Algorithms & Logic - LOGIC.md
+- **Minh**: User Interface & Display - UI.md
+- **Quynh**: Testing & Documentation - TESTING.md
 
 ### 📚 Tài Liệu Tham Khảo
 - [OSDev Wiki](https://wiki.osdev.org/)

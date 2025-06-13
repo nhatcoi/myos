@@ -1,104 +1,573 @@
-# Tính số Pi bằng phương pháp Monte Carlo với MPI
+# MyOS
 
-## Mô tả
+<div align="center">
+  <img src="https://img.shields.io/badge/Language-C++-blue.svg" alt="Language">
+  <img src="https://img.shields.io/badge/Architecture-x86-green.svg" alt="Architecture">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+  <img src="https://img.shields.io/badge/Status-Active-success.svg" alt="Status">
+</div>
 
-Chương trình này sử dụng phương pháp Monte Carlo để ước tính giá trị của số Pi bằng cách:
-1. Gieo ngẫu nhiên N điểm vào hình vuông có cạnh 2R
-2. Đếm số điểm m rơi vào trong hình tròn nội tiếp có bán kính R
-3. Tính Pi = 4 * m / N
+## 📋 Mục Lục
 
-Chương trình sử dụng MPI để song song hóa tính toán với:
-- `MPI_Bcast`: Phân phối số lượng điểm N
-- `MPI_Reduce`: Tổng hợp kết quả từ các process
+- [Tổng Quan](#tổng-quan)
+- [Tính Năng](#tính-năng)  
+- [Kiến Thức Nền Tảng](#kiến-thức-nền-tảng)
+- [Cách Thức Hoạt Động](#cách-thức-hoạt-động)
+- [Cài Đặt và Chạy](#cài-đặt-và-chạy)
+- [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
+- [Hướng Dẫn Sử Dụng](#hướng-dẫn-sử-dụng)
+- [Phát Triển](#phát-triển)
+- [Troubleshooting](#troubleshooting)
+- [Credits](#credits)
 
-## Yêu cầu hệ thống
+## 🌟 Tổng Quan
 
-- Trình biên dịch C (gcc)
-- Thư viện MPI (OpenMPI hoặc MPICH)
+MyOS là một hệ điều hành đơn giản được phát triển từ đầu (từ kernel) bằng C++ và Assembly, chuyên biệt cho việc giải phương trình bậc 2. Dự án này được thiết kế như một công cụ học tập để hiểu về:
 
-### Cài đặt MPI trên macOS:
-```bash
-# Sử dụng Homebrew
-brew install open-mpi
+- **Kernel Development**: Phát triển kernel từ cơ bản
+- **Operating System Concepts**: Các khái niệm hệ điều hành
+- **Low-level Programming**: Lập trình mức thấp
+- **Hardware Interaction**: Tương tác với phần cứng
 
-# Hoặc sử dụng MacPorts
-sudo port install openmpi
+### 🎯 Mục Tiêu Dự Án
+
+1. **Giáo dục**: Học về phát triển OS từ cơ bản
+2. **Thực hành**: Áp dụng kiến thức hệ điều hành
+3. **Chuyên biệt**: Tập trung vào một tính năng cụ thể (giải PT bậc 2)
+4. **Cross-platform**: Chạy được trên nhiều emulator/virtualizer
+
+## ✨ Tính Năng
+
+### 🔢 Chức Năng Chính
+- **Giải phương trình bậc 2**: ax² + bx + c = 0
+- **Hỗ trợ số âm**: Nhập được hệ số âm
+- **Kết quả chính xác**: Tính toán với độ chính xác cao
+- **Validation**: Kiểm tra dữ liệu đầu vào (a ≠ 0)
+
+### 🖥️ Giao Diện
+- **Menu tiếng Việt**: Giao diện hoàn toàn bằng tiếng Việt
+- **ASCII Art Logo**: Logo đẹp mắt khi khởi động
+- **Navigation**: Điều hướng bằng phím số
+- **Help System**: Hệ thống trợ giúp tích hợp
+
+### 🔧 Tính Năng Kỹ Thuật
+- **Kernel 32-bit**: Kernel x86 32-bit
+- **Memory Management**: Quản lý bộ nhớ tùy chỉnh
+- **Interrupt Handling**: Xử lý ngắt phần cứng
+- **Keyboard Driver**: Driver bàn phím tối ưu
+- **VGA Output**: Xuất hình ảnh VGA text mode
+
+## 📚 Kiến Thức Nền Tảng
+
+### 🏗️ Operating System Concepts
+
+#### Kernel
+- **Monolithic Kernel**: MyOS sử dụng kiến trúc kernel đơn khối
+- **Kernel Space vs User Space**: Hiện tại chỉ có kernel space
+- **Boot Process**: Quá trình khởi động từ bootloader đến kernel
+
+#### Memory Management
+```cpp
+class MemoryManager {
+    MemoryChunk* first;
+    void* malloc(size_t size);
+    void free(void* ptr);
+};
+```
+- **Heap Management**: Quản lý heap tùy chỉnh
+- **Memory Allocation**: Cấp phát bộ nhớ động
+- **Fragmentation**: Xử lý phân mảnh bộ nhớ
+
+#### Hardware Abstraction
+```cpp
+class Port8Bit {
+    uint16_t portnumber;
+    virtual uint8_t Read();
+    virtual void Write(uint8_t data);
+};
+```
+- **Port I/O**: Giao tiếp với hardware qua port
+- **Interrupt Handling**: Xử lý ngắt từ keyboard
+- **Driver Model**: Mô hình driver cho các thiết bị
+
+### 🔧 Low-Level Programming
+
+#### Assembly Integration
+```assembly
+.section .multiboot
+    .long 0x1BADB002
+    .long 0x00
+    .long -(0x1BADB002 + 0x00)
+```
+- **Multiboot Header**: Tuân thủ Multiboot specification
+- **GDT Setup**: Thiết lập Global Descriptor Table
+- **Interrupt Stubs**: Assembly stubs cho interrupt handlers
+
+#### C++ Features Used
+- **Classes and Objects**: OOP design patterns
+- **Virtual Functions**: Polymorphism cho drivers
+- **Operator Overloading**: Custom new/delete operators
+- **Namespaces**: Tổ chức code với namespaces
+
+## ⚙️ Cách Thức Hoạt Động
+
+### 🚀 Boot Process
+
+1. **BIOS/UEFI**: Firmware khởi tạo hệ thống
+2. **Bootloader (GRUB)**: Load kernel vào memory
+3. **Kernel Entry**: Chạy hàm `kernelMain()`
+4. **Hardware Init**: Khởi tạo GDT, IDT, Memory Manager
+5. **Driver Loading**: Load keyboard và VGA drivers
+6. **Main Loop**: Vào vòng lặp chính của OS
+
+### 🧠 Memory Layout
+
+```
+High Memory  +------------------+
+             |    Kernel Stack   |
+             +------------------+
+             |    Heap Space     |
+             +------------------+
+             |    Kernel Code    |
+             +------------------+
+Low Memory   |    Boot Sector    |
+             +------------------+
 ```
 
-### Cài đặt MPI trên Ubuntu/Debian:
-```bash
-sudo apt-get install libopenmpi-dev openmpi-bin
+### ⌨️ Input Processing
+
+```cpp
+void OnKeyDown(char c) {
+    switch(current_state) {
+        case MAIN_MENU:
+            handleMenuNavigation(c);
+            break;
+        case WAITING_A:
+        case WAITING_B:
+        case WAITING_C:
+            handleCoefficientInput(c);
+            break;
+    }
+}
 ```
 
-## Biên dịch
+### 🔢 Mathematical Algorithm
 
+```cpp
+QuadraticResult solveQuadratic(int32_t a, int32_t b, int32_t c) {
+    int32_t discriminant = b*b - 4*a*c;
+    
+    if(discriminant < 0) {
+        result.hasRealRoots = false;
+    } else {
+        int32_t sqrt_disc = sqrt_int(discriminant);
+        result.x1_int = (-b + sqrt_disc) / (2*a);
+        result.x2_int = (-b - sqrt_disc) / (2*a);
+        // Handle fractional parts...
+    }
+    return result;
+}
+```
+
+## 🛠️ Cài Đặt và Chạy
+
+### 📋 Yêu Cầu Hệ Thống
+
+#### Linux/WSL
 ```bash
-# Sử dụng Makefile
+sudo apt-get install build-essential
+sudo apt-get install gcc-multilib g++-multilib
+sudo apt-get install grub-legacy xorriso
+sudo apt-get install qemu-system-x86
+```
+
+#### macOS
+```bash
+brew install i686-elf-binutils    # Assembler, linker, etc.
+brew install i686-elf-gcc         # C/C++ compiler
+brew install qemu   
+brew install i686-elf-grub       # GRUB bootloader
+brew install xorriso              # ISO 9660 filesystem
+brew install mtools               # MS-DOS filesystem tools
+```
+
+
+#### Windows
+- WSL2 với Ubuntu
+- QEMU for Windows
+- VirtualBox
+
+### 🚀 Build và Chạy
+
+#### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd wyoos-ptb2
+```
+
+#### 2. Build OS
+```bash
+# Linux
 make
 
-# Hoặc biên dịch trực tiếp
-mpicc -Wall -O2 -lm -o pi_monte_carlo nvnhat1.c
+# macOS  
+make build-macos
 ```
 
-## Chạy chương trình
-
+#### 3. Chạy với QEMU
 ```bash
-# Chạy với 4 processes
-mpirun -np 4 ./pi_monte_carlo
+make clean                       # Dọn dẹp build files
 
-# Chạy với 8 processes
-mpirun -np 8 ./pi_monte_carlo
+make qemu                        # Build và chạy với QEMU
 
-# Hoặc sử dụng Makefile
-make run      # Chạy với 4 processes
-make run8     # Chạy với 8 processes
-```
-
-## Kết quả mẫu
+make qemu-debug                  # Chạy với debug mode
 
 ```
-=== TÍNH SỐ PI BẰNG PHƯƠNG PHÁP MONTE CARLO ===
-Số processes: 4
-Tổng số điểm gieo: 1000000
-Số điểm rơi vào hình tròn: 785263
-Tỷ lệ điểm trong hình tròn: 0.785263
-Pi ước tính: 3.1410520000
-Pi thực tế: 3.1415926536
-Sai số: 0.0005406536
-Sai số tương đối: 0.017207%
-Thời gian thực hiện: 0.023456 giây
 
-=== THÔNG TIN PHÂN PHỐI CÔNG VIỆC ===
-Điểm/process (trung bình): 250000
+#### 4. Chạy với UTM (macOS)
+```bash
+# Tạo ISO cho UTM
+make utm
 
-Process 0: Xử lý 250000 điểm, tìm được 196394 điểm trong hình tròn
-Process 1: Xử lý 250000 điểm, tìm được 196128 điểm trong hình tròn
-Process 2: Xử lý 250000 điểm, tìm được 196456 điểm trong hình tròn
-Process 3: Xử lý 250000 điểm, tìm được 196285 điểm trong hình tròn
+# Hoặc dùng qemu trực tiếp
+qemu-system-i386 -cdrom mykernel.iso -m 256M
 ```
 
-## Giải thích thuật toán
+### 🖥️ Cấu Hình Virtual Machine
 
-1. **Nguyên lý**: Hình tròn bán kính R nội tiếp trong hình vuông cạnh 2R
-   - Diện tích hình tròn: π × R²
-   - Diện tích hình vuông: (2R)² = 4R²
-   - Tỷ lệ diện tích: π/4
+#### QEMU Settings
+- **Architecture**: i386
+- **Memory**: 128MB - 256MB
+- **Boot**: CD-ROM first
+- **Display**: VGA
 
-2. **Monte Carlo**: Gieo ngẫu nhiên N điểm vào hình vuông
-   - Điểm (x,y) trong hình tròn nếu: x² + y² ≤ R²
-   - Tỷ lệ điểm trong hình tròn ≈ π/4
-   - Suy ra: π ≈ 4 × (số điểm trong hình tròn) / N
+#### UTM Settings
+- **Architecture**: x86_64 (emulation)
+- **System**: Standard PC (i440FX + PIIX)
+- **Memory**: 256MB
+- **Boot Order**: CD/DVD first
 
-3. **Song song hóa với MPI**:
-   - Chia N điểm cho các process
-   - Mỗi process tính số điểm trong hình tròn của phần mình
-   - Tổng hợp kết quả bằng MPI_Reduce
+#### VirtualBox Settings
+- **Type**: Other/Unknown
+- **Memory**: 256MB
+- **Boot Order**: CD/DVD first
+- **Enable VT-x/AMD-V**: Yes
 
-## Độ chính xác
+## 📁 Cấu Trúc Dự Án
 
-Độ chính xác phụ thuộc vào:
-- Số lượng điểm N (càng lớn càng chính xác)
-- Chất lượng bộ sinh số ngẫu nhiên
-- Số lượng process (nhiều process → ít tương quan)
+```
+wyoos-ptb2/
+├── src/                          # Source code chính
+│   ├── kernel.cpp               # Kernel chính và logic ứng dụng
+│   ├── gdt.cpp                  # Global Descriptor Table
+│   ├── memorymanagement.cpp     # Quản lý bộ nhớ
+│   ├── multitasking.cpp         # Đa nhiệm (hiện chưa dùng)
+│   ├── syscalls.cpp             # System calls
+│   ├── loader.s                 # Assembly bootloader
+│   ├── drivers/                 # Hardware drivers
+│   │   ├── driver.cpp           # Base driver class
+│   │   ├── keyboard.cpp         # Keyboard driver
+│   │   └── vga.cpp              # VGA text mode driver
+│   └── hardwarecommunication/   # Hardware communication
+│       ├── interrupts.cpp       # Interrupt management
+│       ├── interruptstubs.s     # Assembly interrupt stubs
+│       └── port.cpp             # Port I/O operations
+├── include/                      # Header files
+│   ├── common/
+│   │   └── types.h              # Common type definitions
+│   ├── drivers/
+│   │   ├── driver.h
+│   │   ├── keyboard.h
+│   │   └── vga.h
+│   ├── hardwarecommunication/
+│   │   ├── interrupts.h
+│   │   └── port.h
+│   ├── gdt.h
+│   ├── memorymanagement.h
+│   ├── multitasking.h
+│   └── syscalls.h
+├── obj/                          # Compiled object files
+├── mykernel.bin                  # Kernel binary
+├── mykernel.iso                  # Bootable ISO image
+├── linker.ld                     # Linker script
+├── makefile                      # Build configuration
+└── README.md                     # This file
+```
 
-Với N = 10⁶, sai số thường < 0.1%
+### 🔍 File Chi Tiết
+
+#### Core Files
+- **`kernel.cpp`**: Logic chính, UI, toán học
+- **`gdt.cpp`**: Segment management
+- **`memorymanagement.cpp`**: Dynamic memory allocation
+- **`loader.s`**: Assembly entry point
+
+#### Drivers
+- **`keyboard.cpp`**: PS/2 keyboard driver với UTM compatibility
+- **`vga.cpp`**: VGA text mode (80x25, 16 colors)
+- **`driver.cpp`**: Base class cho tất cả drivers
+
+#### Hardware Communication
+- **`interrupts.cpp`**: IDT setup và interrupt routing
+- **`port.cpp`**: Port I/O abstraction (inb/outb)
+
+## 📖 Hướng Dẫn Sử Dụng
+
+### 🎮 Điều Khiển
+
+#### Menu Chính
+- **1**: Giải phương trình bậc 2
+- **2**: Xem hướng dẫn
+- **3**: Thông tin phát triển
+- **4**: Thoát (QEMU only)
+- **ESC**: Quay lại menu chính
+
+#### Nhập Hệ Số
+- **Số (0-9)**: Nhập chữ số
+- **- (dấu trừ)**: Hệ số âm (chỉ ở đầu)
+- **Enter**: Xác nhận và chuyển hệ số tiếp theo
+- **Backspace**: Xóa ký tự cuối
+- **ESC**: Quay lại menu chính
+
+#### Xem Kết Quả
+- **R**: Giải phương trình mới
+- **ESC**: Quay lại menu chính
+
+### 🔢 Giải Phương Trình
+
+#### Bước 1: Nhập hệ số a
+- Hệ số a phải khác 0
+- Có thể nhập số âm
+- Nhấn Enter để xác nhận
+
+#### Bước 2: Nhập hệ số b
+- Có thể là 0, âm hoặc dương
+- Nhấn Enter để tiếp tục
+
+#### Bước 3: Nhập hệ số c
+- Hệ số tự do
+- Nhấn Enter để tính toán
+
+#### Bước 4: Xem kết quả
+- **Delta > 0**: Hai nghiệm phân biệt
+- **Delta = 0**: Nghiệm kép
+- **Delta < 0**: Vô nghiệm (phức)
+
+### 📝 Ví Dụ Sử Dụng
+
+```
+Phương trình: x² - 5x + 6 = 0
+Input: a = 1, b = -5, c = 6
+Output: x₁ = 3, x₂ = 2
+
+Phương trình: x² - 4x + 4 = 0  
+Input: a = 1, b = -4, c = 4
+Output: x = 2 (nghiệm kép)
+
+Phương trình: x² + x + 1 = 0
+Input: a = 1, b = 1, c = 1
+Output: Vô nghiệm thực
+```
+
+## 👨‍💻 Phát Triển
+
+### 🔧 Thêm Tính Năng Mới
+
+#### 1. Thêm Menu Item
+```cpp
+// Trong displayMainMenu()
+printAt("5. Tinh nang moi", 30, 15, 0x0F);
+
+// Trong KeyboardEventHandler
+case '5':
+    current_state = NEW_FEATURE;
+    displayNewFeature();
+    break;
+```
+
+#### 2. Thêm Driver Mới
+```cpp
+class NewDriver : public Driver {
+public:
+    void Activate();
+    int Reset();
+};
+
+// Trong kernelMain()
+NewDriver newdriver(&interrupts);
+drvManager.AddDriver(&newdriver);
+```
+
+#### 3. Thêm System Call
+```cpp
+// Trong syscalls.cpp
+void SYSCALL_NEW_FUNCTION() {
+    // Implementation
+}
+```
+
+### 🧪 Testing
+
+#### Unit Tests
+```bash
+# Test math functions
+make test-math
+
+# Test memory management  
+make test-memory
+
+# Test drivers
+make test-drivers
+```
+
+#### Debug Mode
+```bash
+# Chạy với debug symbols
+make qemu-debug
+
+# Kết nối GDB
+gdb mykernel.bin
+(gdb) target remote localhost:1234
+(gdb) continue
+```
+
+### 🐛 Known Issues
+
+1. **Floating Point**: Chưa hỗ trợ FPU, dùng fixed-point arithmetic
+2. **Multi-threading**: Chưa implement threading
+3. **File System**: Chưa có file system
+4. **Network**: Chưa hỗ trợ networking
+
+## 🔧 Troubleshooting
+
+### ❌ Build Errors
+
+#### "No such file or directory"
+```bash
+# Đảm bảo có cross-compiler
+which i686-elf-gcc
+# Hoặc
+which x86_64-elf-gcc
+```
+
+#### "Permission denied"
+```bash
+# Fix permissions
+chmod +x setup_scripts.sh
+sudo make install-deps
+```
+
+### 💥 Runtime Errors
+
+#### "Boot hangs at logo"
+- **UTM**: Kiểm tra architecture (x86_64, không phải ARM)
+- **QEMU**: Thử `-m 256M` thay vì 128M
+- **VirtualBox**: Enable VT-x/AMD-V
+
+#### "Keyboard not working"
+- Kiểm tra VM có USB controller
+- UTM: Enable USB support in settings
+- VirtualBox: Install Guest Additions
+
+#### "Screen artifacts"
+- Thử display settings khác
+- UTM: Thử VGA thay vì virtio-gpu
+- Increase video memory
+
+### 🔍 Debug Tips
+
+#### 1. Serial Output Debug
+```cpp
+// Thêm vào kernel.cpp
+void serial_debug(const char* msg) {
+    Port8Bit serial(0x3F8);
+    while(*msg) {
+        serial.Write(*msg++);
+    }
+}
+```
+
+#### 2. Memory Debug
+```cpp
+// Kiểm tra memory leaks
+void debug_memory() {
+    printf("Active memory manager: ");
+    printf(MemoryManager::activeMemoryManager ? "OK" : "NULL");
+}
+```
+
+#### 3. Interrupt Debug
+```bash
+# Chạy QEMU với monitor
+qemu-system-i386 -cdrom mykernel.iso -monitor stdio
+
+# Commands trong QEMU monitor
+(qemu) info registers
+(qemu) info memory
+(qemu) info interrupts
+```
+
+### 📊 Performance Tips
+
+#### 1. Optimization Flags
+```makefile
+GCCPARAMS += -O2 -ffast-math -funroll-loops
+```
+
+#### 2. Memory Allocation
+```cpp
+// Pre-allocate large objects
+static char buffer[4096];
+// Thay vì malloc/free nhiều lần
+```
+
+#### 3. Interrupt Efficiency
+```cpp
+// Minimize work in interrupt handlers
+uint32_t HandleInterrupt(uint32_t esp) {
+    // Process quickly
+    return esp;
+}
+```
+
+## 🏆 Credits
+
+### 👥 Nhóm Phát Triển
+- **Nhat**: Kernel & Memory Management - MAIN.md
+- **Ngoc**: Keyboard Driver & Input Handling  - INPUT.md
+- **Sang**: Mathematical Algorithms & Logic - LOGIC.md
+- **Minh**: User Interface & Display - UI.md
+- **Quynh**: Testing & Documentation - TESTING.md
+
+### 📚 Tài Liệu Tham Khảo
+- [OSDev Wiki](https://wiki.osdev.org/)
+- [Intel x86 Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html)
+- [Multiboot Specification](https://www.gnu.org/software/grub/manual/multiboot/multiboot.html)
+- [James Molloy's Kernel Tutorial](http://www.jamesmolloy.co.uk/tutorial_html/)
+
+### 🛠️ Tools & Libraries
+- **GCC Cross Compiler**: i686-elf-gcc
+- **GNU Assembler**: gas (GNU as)
+- **GNU Linker**: ld
+- **GRUB**: Bootloader
+- **QEMU**: Emulator
+- **UTM**: macOS virtualization
+- **Xorriso**: ISO creation
+
+### 📜 License
+MIT License - Chi tiết xem file LICENSE
+
+### 🤝 Contributing
+Contributions welcome! Please read CONTRIBUTING.md for guidelines.
+
+### 📧 Contact
+- Project Repository: [GitHub Link]
+- Documentation: [Wiki Link]
+- Issues: [Issues Link]
+
+---
+
+<div align="center">
+  <p><strong>MyOS v2.0 - Hệ Điều Hành Giải Phương Trình Bậc 2</strong></p>
+  <p>Được phát triển với ❤️ bởi nhóm sinh viên IT</p>
+</div>

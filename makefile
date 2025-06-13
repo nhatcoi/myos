@@ -27,6 +27,28 @@ objects = obj/loader.o \
           obj/gui/window.o \
           obj/kernel.o
 
+# Clean refactored version objects  
+objects_clean = obj/loader.o \
+          obj/gdt.o \
+          obj/memorymanagement.o \
+          obj/drivers/driver.o \
+          obj/hardwarecommunication/port.o \
+          obj/hardwarecommunication/interruptstubs.o \
+          obj/hardwarecommunication/interrupts.o \
+          obj/syscalls.o \
+          obj/multitasking.o \
+          obj/drivers/keyboard.o \
+          obj/drivers/mouse.o \
+          obj/drivers/vga.o \
+          obj/gui/widget.o \
+          obj/gui/desktop.o \
+          obj/gui/window.o \
+          obj/modules/printf.o \
+          obj/modules/math_functions.o \
+          obj/modules/ui_functions.o \
+          obj/modules/app_logic.o \
+          obj/kernel_clean.o
+
 # Debug version objects
 debug_objects = obj/loader.o \
           obj/gdt.o \
@@ -53,6 +75,9 @@ run: mykernel.iso
 
 qemu: mykernel.iso
 	qemu-system-i386 -cdrom mykernel.iso -m 128M
+
+qemu-clean: mykernel_clean.iso
+	qemu-system-i386 -cdrom mykernel_clean.iso -m 128M
 
 qemu-debug: mykernel.iso
 	qemu-system-i386 -cdrom mykernel.iso -m 128M -s -S
@@ -104,9 +129,33 @@ mykernel.iso: mykernel.bin
 	$(GRUB_MKRESCUE) --output=mykernel.iso iso
 	rm -rf iso
 
+mykernel_clean.bin: linker.ld $(objects_clean)
+	$(LD) $(LDPARAMS) -T $< -o $@ $(objects_clean)
+
+mykernel_clean.iso: mykernel_clean.bin
+	mkdir iso_clean
+	mkdir iso_clean/boot
+	mkdir iso_clean/boot/grub
+	cp mykernel_clean.bin iso_clean/boot/mykernel.bin
+	echo 'set timeout=0'                      > iso_clean/boot/grub/grub.cfg
+	echo 'set default=0'                     >> iso_clean/boot/grub/grub.cfg
+	echo ''                                  >> iso_clean/boot/grub/grub.cfg
+	echo 'menuentry "MyOS Clean Refactored" {' >> iso_clean/boot/grub/grub.cfg
+	echo '  multiboot /boot/mykernel.bin'    >> iso_clean/boot/grub/grub.cfg
+	echo '  boot'                            >> iso_clean/boot/grub/grub.cfg
+	echo '}'                                 >> iso_clean/boot/grub/grub.cfg
+	$(GRUB_MKRESCUE) --output=mykernel_clean.iso iso_clean
+	rm -rf iso_clean
+
 install: mykernel.bin
 	sudo cp $< /boot/mykernel.bin
 
 .PHONY: clean
 clean:
-	rm -rf obj mykernel.bin mykernel.iso mykernel_debug.bin mykernel_debug.iso
+	rm -rf obj mykernel.bin mykernel.iso mykernel_clean.bin mykernel_clean.iso mykernel_debug.bin mykernel_debug.iso
+
+# Build targets
+.PHONY: original clean-refactored all-versions
+original: mykernel.iso
+clean-refactored: mykernel_clean.iso
+all-versions: original clean-refactored

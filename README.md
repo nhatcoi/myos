@@ -183,9 +183,14 @@ sudo apt-get install qemu-system-x86
 
 #### macOS
 ```bash
-brew install x86_64-elf-gcc x86_64-elf-binutils
-brew install qemu xorriso
+brew install i686-elf-binutils    # Assembler, linker, etc.
+brew install i686-elf-gcc         # C/C++ compiler
+brew install qemu   
+brew install i686-elf-grub       # GRUB bootloader
+brew install xorriso              # ISO 9660 filesystem
+brew install mtools               # MS-DOS filesystem tools
 ```
+
 
 #### Windows
 - WSL2 với Ubuntu
@@ -211,11 +216,12 @@ make build-macos
 
 #### 3. Chạy với QEMU
 ```bash
-# Chạy bình thường
-make qemu
+make clean                       # Dọn dẹp build files
 
-# Chạy với debug
-make qemu-debug
+make qemu                        # Build và chạy với QEMU
+
+make qemu-debug                  # Chạy với debug mode
+
 ```
 
 #### 4. Chạy với UTM (macOS)

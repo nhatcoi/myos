@@ -20,11 +20,7 @@ objects = obj/loader.o \
           obj/syscalls.o \
           obj/multitasking.o \
           obj/drivers/keyboard.o \
-          obj/drivers/mouse.o \
           obj/drivers/vga.o \
-          obj/gui/widget.o \
-          obj/gui/desktop.o \
-          obj/gui/window.o \
           obj/kernel.o
 
 # Clean refactored version objects  
@@ -38,34 +34,12 @@ objects_clean = obj/loader.o \
           obj/syscalls.o \
           obj/multitasking.o \
           obj/drivers/keyboard.o \
-          obj/drivers/mouse.o \
           obj/drivers/vga.o \
-          obj/gui/widget.o \
-          obj/gui/desktop.o \
-          obj/gui/window.o \
           obj/modules/printf.o \
           obj/modules/math_functions.o \
           obj/modules/ui_functions.o \
           obj/modules/app_logic.o \
-          obj/kernel_clean.o
-
-# Debug version objects
-debug_objects = obj/loader.o \
-          obj/gdt.o \
-          obj/memorymanagement.o \
-          obj/drivers/driver.o \
-          obj/hardwarecommunication/port.o \
-          obj/hardwarecommunication/interruptstubs.o \
-          obj/hardwarecommunication/interrupts.o \
-          obj/syscalls.o \
-          obj/multitasking.o \
-          obj/drivers/keyboard.o \
-          obj/drivers/mouse.o \
-          obj/drivers/vga.o \
-          obj/gui/widget.o \
-          obj/gui/desktop.o \
-          obj/gui/window.o \
-          obj/kernel_debug.o
+          obj/kernel_clean.o 
 
 
 
@@ -81,27 +55,6 @@ qemu-clean: mykernel_clean.iso
 
 qemu-debug: mykernel.iso
 	qemu-system-i386 -cdrom mykernel.iso -m 128M -s -S
-
-debug: mykernel_debug.iso
-	qemu-system-i386 -cdrom mykernel_debug.iso -m 128M
-
-mykernel_debug.bin: linker.ld $(debug_objects)
-	$(LD) $(LDPARAMS) -T $< -o $@ $(debug_objects)
-
-mykernel_debug.iso: mykernel_debug.bin
-	mkdir iso_debug
-	mkdir iso_debug/boot
-	mkdir iso_debug/boot/grub
-	cp mykernel_debug.bin iso_debug/boot/mykernel.bin
-	echo 'set timeout=0'                      > iso_debug/boot/grub/grub.cfg
-	echo 'set default=0'                     >> iso_debug/boot/grub/grub.cfg
-	echo ''                                  >> iso_debug/boot/grub/grub.cfg
-	echo 'menuentry "Debug OS" {' >> iso_debug/boot/grub/grub.cfg
-	echo '  multiboot /boot/mykernel.bin'    >> iso_debug/boot/grub/grub.cfg
-	echo '  boot'                            >> iso_debug/boot/grub/grub.cfg
-	echo '}'                                 >> iso_debug/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) --output=mykernel_debug.iso iso_debug
-	rm -rf iso_debug
 
 obj/%.o: src/%.cpp
 	mkdir -p $(@D)
@@ -152,7 +105,7 @@ install: mykernel.bin
 
 .PHONY: clean
 clean:
-	rm -rf obj mykernel.bin mykernel.iso mykernel_clean.bin mykernel_clean.iso mykernel_debug.bin mykernel_debug.iso
+	rm -rf obj mykernel.bin mykernel.iso mykernel_clean.bin mykernel_clean.iso
 
 # Build targets
 .PHONY: original clean-refactored all-versions

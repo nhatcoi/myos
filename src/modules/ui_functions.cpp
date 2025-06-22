@@ -111,13 +111,18 @@ void displayHelpScreen()
     printAt("  - b: He so cua x", 15, 10, 0x0A);
     printAt("  - c: Hang so tu do", 15, 11, 0x0A);
     
-    printAt("Cac phim dieu khien:", 15, 14, 0x0B);
-    printAt("  - Enter: Xac nhan nhap", 15, 15, 0x0A);
-    printAt("  - Backspace: Xoa ky tu", 15, 16, 0x0A);
-    printAt("  - ESC: Quay lai menu chinh", 15, 17, 0x0A);
-    printAt("  - R: Reset de giai phuong trinh moi", 15, 18, 0x0A);
+    printAt("Dinh dang so nhap:", 15, 13, 0x0B);
+    printAt("  - So nguyen: 5, -3, 0", 15, 14, 0x0A);
+    printAt("  - So thap phan: 1.5, -2.75, 0.333", 15, 15, 0x0A);
+    printAt("  - Toi da 3 chu so thap phan", 15, 16, 0x0A);
     
-    printCentered("Nhan ESC de quay lai menu chinh", 22, 0x0C);
+    printAt("Cac phim dieu khien:", 15, 18, 0x0B);
+    printAt("  - Enter: Xac nhan nhap", 15, 19, 0x0A);
+    printAt("  - Backspace: Xoa ky tu", 15, 20, 0x0A);
+    printAt("  - ESC: Quay lai menu chinh", 15, 21, 0x0A);
+    printAt("  - R: Reset de giai phuong trinh moi", 15, 22, 0x0A);
+    
+    printCentered("Nhan ESC de quay lai menu chinh", 23, 0x0C);
 }
 
 void displayAboutScreen()

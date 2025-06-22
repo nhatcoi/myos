@@ -205,32 +205,42 @@ git clone <repository-url>
 cd wyoos-ptb2
 ```
 
-#### 2. Build OS
+#### 2. Build Commands
 ```bash
-# Linux
-make
+# Dọn dẹp build files
+make clean
 
-# macOS  
-make build-macos
+# Build phiên bản monolithic (kernel.cpp)
+make original
+
+# Build phiên bản modular (kernel_clean.cpp + modules)
+make clean-refactored
+
+# Build cả hai phiên bản
+make all-versions
 ```
 
-#### 3. Chạy với QEMU
+#### 3. Run Commands
 ```bash
-make clean                       # Dọn dẹp build files
+# Chạy phiên bản monolithic
+make qemu
 
-make qemu                        # Build và chạy với QEMU
+# Chạy phiên bản modular
+make qemu-clean
 
-make qemu-debug                  # Chạy với debug mode
-
+# Chạy với debug mode (GDB debugging)
+make qemu-debug
 ```
 
-#### 4. Chạy với UTM (macOS)
+#### 4. UTM/VirtualBox/VMware
 ```bash
-# Tạo ISO cho UTM
-make utm
+# Sử dụng file ISO đã build
+# Original version: mykernel.iso
+# Modular version: mykernel_clean.iso
 
-# Hoặc dùng qemu trực tiếp
+# Hoặc chạy trực tiếp với qemu-system
 qemu-system-i386 -cdrom mykernel.iso -m 256M
+qemu-system-i386 -cdrom mykernel_clean.iso -m 256M
 ```
 
 ### 🖥️ Cấu Hình Virtual Machine
@@ -258,58 +268,124 @@ qemu-system-i386 -cdrom mykernel.iso -m 256M
 ```
 wyoos-ptb2/
 ├── src/                          # Source code chính
-│   ├── kernel.cpp               # Kernel chính và logic ứng dụng
+│   ├── kernel.cpp               # ⭐ Kernel gốc (monolithic)
+│   ├── kernel_clean.cpp         # 🆕 Kernel refactored (modular)
+│   ├── loader.s                 # Assembly bootloader
 │   ├── gdt.cpp                  # Global Descriptor Table
 │   ├── memorymanagement.cpp     # Quản lý bộ nhớ
-│   ├── multitasking.cpp         # Đa nhiệm (hiện chưa dùng)
+│   ├── multitasking.cpp         # Đa nhiệm (prepared but unused)
 │   ├── syscalls.cpp             # System calls
-│   ├── loader.s                 # Assembly bootloader
+│   │
+│   ├── modules/                 # 🆕 MODULES TÁCH RỜI
+│   │   ├── printf.cpp           # Print functions
+│   │   ├── math_functions.cpp   # Math operations (sqrt, solve)
+│   │   ├── ui_functions.cpp     # UI functions (menu, display)
+│   │   ├── app_logic.cpp        # Application logic & states
+│   │   └── README.md            # Module documentation
+│   │
 │   ├── drivers/                 # Hardware drivers
 │   │   ├── driver.cpp           # Base driver class
-│   │   ├── keyboard.cpp         # Keyboard driver
-│   │   └── vga.cpp              # VGA text mode driver
+│   │   ├── keyboard.cpp         # ⭐ Keyboard driver (core)
+│   │   └── vga.cpp              # ⭐ VGA text mode (core)
+│   │
 │   └── hardwarecommunication/   # Hardware communication
-│       ├── interrupts.cpp       # Interrupt management
+│       ├── interrupts.cpp       # ⭐ Interrupt management
 │       ├── interruptstubs.s     # Assembly interrupt stubs
-│       └── port.cpp             # Port I/O operations
+│       └── port.cpp             # ⭐ Port I/O operations
+│
 ├── include/                      # Header files
 │   ├── common/
 │   │   └── types.h              # Common type definitions
 │   ├── drivers/
 │   │   ├── driver.h
-│   │   ├── keyboard.h
-│   │   └── vga.h
+│   │   ├── keyboard.h           # ⭐ Core header
+│   │   └── vga.h                # ⭐ Core header
 │   ├── hardwarecommunication/
-│   │   ├── interrupts.h
-│   │   └── port.h
+│   │   ├── interrupts.h         # ⭐ Core header
+│   │   └── port.h               # ⭐ Core header
 │   ├── gdt.h
-│   ├── memorymanagement.h
+│   ├── memorymanagement.h       # ⭐ Core header
 │   ├── multitasking.h
 │   └── syscalls.h
-├── obj/                          # Compiled object files
-├── mykernel.bin                  # Kernel binary
-├── mykernel.iso                  # Bootable ISO image
+│
+├── docs/                         # 🆕 DOCUMENTATION
+│   ├── MAIN.md                  # Kernel & Memory (Nhat)
+│   ├── UI.md                    # User Interface (Minh)
+│   ├── INPUT.md                 # Input Handling (Ngoc)
+│   ├── LOGIC.md                 # Math Algorithms (Sang)
+│   └── TESTING.md               # Testing & QA (Quynh)
+│
+├── grub/                         # 🆕 GRUB configuration
+├── obj/                          # Compiled object files (auto-generated)
+├── .git/                         # Git repository
+├── .gitignore                    # Git ignore rules
+│
+├── mykernel.bin                  # Kernel binary (generated)
+├── mykernel.iso                  # Bootable ISO original (generated)
+├── mykernel_clean.bin            # Clean kernel binary (generated)
+├── mykernel_clean.iso            # Clean bootable ISO (generated)
 ├── linker.ld                     # Linker script
-├── makefile                      # Build configuration
-└── README.md                     # This file
+├── makefile                      # 🔧 Enhanced build configuration
+├── LICENSE                       # 🆕 MIT License
+└── README.md                     # 📖 Comprehensive documentation
+```
+
+### 🎯 **Ký hiệu giải thích:**
+- ⭐ **Core components**: Thành phần cốt lõi của hệ thống
+- 🆕 **New additions**: Thành phần mới được thêm vào
+- 🔧 **Enhanced**: Thành phần được cải tiến
+- 📖 **Documentation**: Tài liệu và hướng dẫn
+
+### 🔄 **Hai phiên bản kernel:**
+- **kernel.cpp**: Phiên bản monolithic gốc (tất cả code trong 1 file)
+- **kernel_clean.cpp**: Phiên bản modular tối ưu (sử dụng modules tách rời + tách hàm main)
+
+### 📦 **Build targets:**
+```bash
+make original           # Build kernel.cpp
+make clean-refactored   # Build kernel_clean.cpp với modules
+make qemu              # Run original version
+make qemu-clean        # Run modular version
 ```
 
 ### 🔍 File Chi Tiết
 
-#### Core Files
-- **`kernel.cpp`**: Logic chính, UI, toán học
-- **`gdt.cpp`**: Segment management
-- **`memorymanagement.cpp`**: Dynamic memory allocation
-- **`loader.s`**: Assembly entry point
+#### 🔬 **Core System Files**
+- **`kernel.cpp`**: Kernel monolithic gốc (tất cả logic trong 1 file)
+- **`kernel_clean.cpp`**: Kernel modular tối ưu với:
+  - ✅ Sử dụng forward declarations cho modules
+  - ✅ Tách hàm `kernelMain` thành các hàm nhỏ:
+    - `initializeBootScreen()` - Hiển thị boot screen
+    - `initializeSystemCore()` - Khởi tạo GDT, Memory, TaskManager, Interrupts  
+    - `initializeDrivers()` - Khởi tạo driver manager và keyboard
+    - `startApplication()` - Bắt đầu ứng dụng và kích hoạt interrupts
+    - `runMainLoop()` - Vòng lặp chính của OS
+  - ✅ Sử dụng struct để nhóm các component liên quan
+- **`gdt.cpp`**: Global Descriptor Table - segment management
+- **`memorymanagement.cpp`**: Dynamic memory allocation (10MB heap)
+- **`loader.s`**: Assembly entry point với multiboot header
 
-#### Drivers
-- **`keyboard.cpp`**: PS/2 keyboard driver với UTM compatibility
-- **`vga.cpp`**: VGA text mode (80x25, 16 colors)
+#### 📦 **Modules (Separation of Concerns)**
+- **`printf.cpp`**: Print functions (printf, printfHex, printInt, printIntAt)
+- **`math_functions.cpp`**: Math operations (sqrt_int, stringToInt, solveQuadratic)
+- **`ui_functions.cpp`**: UI functions (clearScreen, drawBorder, displayMenus)
+- **`app_logic.cpp`**: Application logic (states, input handling, shutdown)
+
+#### 🎛️ **Hardware Drivers**
+- **`keyboard.cpp`**: PS/2 keyboard driver với UTM/QEMU compatibility
+- **`vga.cpp`**: VGA text mode (80x25, 16 colors, 0xB8000)
 - **`driver.cpp`**: Base class cho tất cả drivers
 
-#### Hardware Communication
-- **`interrupts.cpp`**: IDT setup và interrupt routing
-- **`port.cpp`**: Port I/O abstraction (inb/outb)
+#### 🔌 **Hardware Communication**
+- **`interrupts.cpp`**: IDT setup, interrupt routing, keyboard IRQ1
+- **`port.cpp`**: Port I/O abstraction (inb/outb, shutdown port 0x604)
+
+#### 📚 **Documentation**
+- **`docs/MAIN.md`**: Kernel & Memory Management (Nhat)
+- **`docs/UI.md`**: User Interface & Display (Minh)
+- **`docs/INPUT.md`**: Keyboard Driver & Input (Ngoc)
+- **`docs/LOGIC.md`**: Mathematical Algorithms (Sang)
+- **`docs/TESTING.md`**: Testing & Documentation (Quynh)
 
 ## 📖 Hướng Dẫn Sử Dụng
 

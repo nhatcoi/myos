@@ -2,6 +2,7 @@
 
 using namespace myos::common;
 
+// Hàm hiển thị string
 void printf(char* str)
 {
     static uint16_t* VideoMemory = (uint16_t*)0xb8000;
@@ -38,6 +39,7 @@ void printf(char* str)
     }
 }
 
+// Hàm hiển thị hex
 void printfHex(uint8_t key)
 {
     char* foo = "00";
@@ -47,7 +49,7 @@ void printfHex(uint8_t key)
     printf(foo);
 }
 
-// Print integer with sign
+// Hàm hiển thị int
 void printInt(int32_t num)
 {
     if(num < 0) {

@@ -248,7 +248,7 @@ extern "C" void kernelMain(const void* multiboot_structure, uint32_t /*multiboot
     displayBootScreen();
 
     // Chờ 2s
-    for (volatile int i = 0; i < 1000000000; ++i);
+    // for (volatile int i = 0; i < 1000000000; ++i);
 
     // === SYSTEM INITIALIZATION ===
     

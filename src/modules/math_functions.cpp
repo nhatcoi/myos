@@ -85,9 +85,24 @@ int32_t sqrt_int(int32_t x)
     return guess;
 }
 
+int strlen(const char* str) {
+    int len = 0;
+    while(str[len] != '\0') {
+        len++;
+    }
+    return len;
+}
+
+
 // Convert string có thập phân thành DecimalNumber
 DecimalNumber stringToDecimal(char* str, int len)
 {
+    // Nếu len không hợp lệ, tính lại thủ công
+    if(len <= 0) {
+        len = 0;
+        while(str[len] != '\0') len++;
+    }
+
     DecimalNumber result;
     int32_t int_part = 0;
     int32_t frac_part = 0;
@@ -95,13 +110,12 @@ DecimalNumber stringToDecimal(char* str, int len)
     int start = 0;
     bool has_decimal = false;
     int decimal_pos = -1;
-    
+
     if(str[0] == '-') {
         sign = -1;
         start = 1;
     }
-    
-    // Tìm vị trí dấu thập phân
+
     for(int i = start; i < len; i++) {
         if(str[i] == '.') {
             has_decimal = true;
@@ -109,16 +123,14 @@ DecimalNumber stringToDecimal(char* str, int len)
             break;
         }
     }
-    
-    // Parse phần nguyên
+
     int end_int = has_decimal ? decimal_pos : len;
     for(int i = start; i < end_int; i++) {
         if(str[i] >= '0' && str[i] <= '9') {
             int_part = int_part * 10 + (str[i] - '0');
         }
     }
-    
-    // Parse phần thập phân
+
     if(has_decimal) {
         int frac_digits = 0;
         for(int i = decimal_pos + 1; i < len && frac_digits < 3; i++) {
@@ -127,16 +139,18 @@ DecimalNumber stringToDecimal(char* str, int len)
                 frac_digits++;
             }
         }
-        // Pad với 0 nếu ít hơn 3 chữ số
         while(frac_digits < 3) {
             frac_part *= 10;
             frac_digits++;
         }
     }
-    
-    result.value = sign * (int_part * DECIMAL_SCALE + frac_part);
+
+    int total = int_part * DECIMAL_SCALE + frac_part;
+    result.value = (sign < 0) ? -total : total;
     return result;
 }
+
+
 
 // Convert string qua int (legacy)
 int32_t stringToInt(char* str, int len)

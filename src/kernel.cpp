@@ -14,144 +14,43 @@ using namespace myos::common;
 using namespace myos::drivers;
 using namespace myos::hardwarecommunication;
 
-void printf(char* str)
-{
-    static uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    static uint8_t x=0,y=0;
+// === FORWARD DECLARATIONS FOR OUR MODULES ===
+// These functions are implemented in separate files for better organization
 
-    for(int i = 0; str[i] != '\0'; ++i)
-    {
-        switch(str[i])
-        {
-            case '\n':
-                x = 0;
-                y++;
-                break;
-            default:
-                VideoMemory[80*y+x] = (VideoMemory[80*y+x] & 0xFF00) | str[i];
-                x++;
-                break;
-        }
+// import hàm từ printf.cpp
+void printf(char* str);
+void printfHex(uint8_t key);
+void printInt(int32_t num);
+void printIntAt(int32_t num, int x, int y, uint8_t color = 0x0F);
 
-        if(x >= 80)
-        {
-            x = 0;
-            y++;
-        }
-
-        if(y >= 25)
-        {
-            for(y = 0; y < 25; y++)
-                for(x = 0; x < 80; x++)
-                    VideoMemory[80*y+x] = (VideoMemory[80*y+x] & 0xFF00) | ' ';
-            x = 0;
-            y = 0;
-        }
-    }
-}
-
-void printfHex(uint8_t key)
-{
-    char* foo = "00";
-    char* hex = "0123456789ABCDEF";
-    foo[0] = hex[(key >> 4) & 0xF];
-    foo[1] = hex[key & 0xF];
-    printf(foo);
-}
-
-// Simple integer square root using Newton's method
-int32_t sqrt_int(int32_t x)
-{
-    if(x <= 1) return x;
-    
-    int32_t guess = x / 2;
-    int32_t prev_guess;
-    
-    for(int i = 0; i < 10; i++) // limit iterations
-    {
-        prev_guess = guess;
-        guess = (guess + x / guess) / 2;
-        if(guess == prev_guess) break;
-    }
-    return guess;
-}
-
-// Convert string to integer
-int32_t stringToInt(char* str, int len)
-{
-    int32_t result = 0;
-    int32_t sign = 1;
-    int start = 0;
-    
-    if(str[0] == '-') {
-        sign = -1;
-        start = 1;
-    }
-    
-    for(int i = start; i < len; i++) {
-        if(str[i] >= '0' && str[i] <= '9') {
-            result = result * 10 + (str[i] - '0');
-        }
-    }
-    return result * sign;
-}
-
-// Quadratic equation solver struct
+// import hàm từ math_functions.cpp
+int32_t sqrt_int(int32_t x);
+int32_t stringToInt(char* str, int len);
 struct QuadraticResult {
     bool hasRealRoots;
-    int32_t x1_int;  // integer part of first root
-    int32_t x1_frac; // fractional part * 1000
-    int32_t x2_int;  // integer part of second root  
-    int32_t x2_frac; // fractional part * 1000
-    int32_t discriminant;
+    int32_t x1_int, x1_frac, x2_int, x2_frac, discriminant;
 };
+QuadraticResult solveQuadratic(int32_t a, int32_t b, int32_t c);
 
-// Solve quadratic equation ax² + bx + c = 0
-QuadraticResult solveQuadratic(int32_t a, int32_t b, int32_t c)
-{
-    QuadraticResult result;
-    
-    if(a == 0) {
-        // Not a quadratic equation
-        result.hasRealRoots = false;
-        return result;
-    }
-    
-    // Calculate discriminant: b² - 4ac
-    result.discriminant = b * b - 4 * a * c;
-    
-    if(result.discriminant < 0) {
-        result.hasRealRoots = false;
-        return result;
-    }
-    
-    result.hasRealRoots = true;
-    
-    // Calculate roots: (-b ± √discriminant) / (2a)
-    int32_t sqrt_disc = sqrt_int(result.discriminant);
-    
-    // To handle fractions, multiply by 1000 for precision
-    int32_t numerator1 = (-b + sqrt_disc) * 1000;
-    int32_t numerator2 = (-b - sqrt_disc) * 1000;
-    int32_t denominator = 2 * a;
-    
-    // Root 1
-    result.x1_int = numerator1 / denominator / 1000;
-    result.x1_frac = (numerator1 / denominator) % 1000;
-    if(result.x1_frac < 0) result.x1_frac = -result.x1_frac;
-    
-    // Root 2  
-    result.x2_int = numerator2 / denominator / 1000;
-    result.x2_frac = (numerator2 / denominator) % 1000;
-    if(result.x2_frac < 0) result.x2_frac = -result.x2_frac;
-    
-    return result;
-}
+// import hàm từ ui_functions.cpp
+void clearScreen();
+void drawBorder();
+void printCentered(char* text, int line, uint8_t color = 0x0F);
+void printAt(char* text, int x, int y, uint8_t color = 0x0F);
+void displayMainMenu();
+void displayHelpScreen();
+void displayAboutScreen();
+void displayBootScreen();
 
-// Global variables for enhanced interface
-int32_t coeff_a = 0, coeff_b = 0, coeff_c = 0;
-char input_buffer[100];
-int input_pos = 0;
+// import hàm từ app_logic.cpp  
+void shutdown();
+void displayQuadraticInterface();
+void displayCurrentInput();
+
+// biến global từ app_logic.cpp
+extern int32_t coeff_a, coeff_b, coeff_c;
+extern char input_buffer[100];
+extern int input_pos;
 enum InterfaceState { 
     MAIN_MENU, 
     WAITING_A, 
@@ -161,301 +60,15 @@ enum InterfaceState {
     HELP_SCREEN,
     ABOUT_SCREEN
 };
-InterfaceState current_state = MAIN_MENU;
+extern InterfaceState current_state;
 
-void clearScreen()
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    for(int i = 0; i < 80*25; i++) {
-        VideoMemory[i] = 0x0720; // Space with white on black
-    }
-}
-
-void drawBorder()
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    
-    // Top border
-    for(int x = 0; x < 80; x++) {
-        VideoMemory[x] = 0x0F00 | (x == 0 ? 0xC9 : (x == 79 ? 0xBB : 0xCD));
-    }
-    
-    // Bottom border
-    for(int x = 0; x < 80; x++) {
-        VideoMemory[24*80 + x] = 0x0F00 | (x == 0 ? 0xC8 : (x == 79 ? 0xBC : 0xCD));
-    }
-    
-    // Side borders
-    for(int y = 1; y < 24; y++) {
-        VideoMemory[y*80] = 0x0F00 | 0xBA;      // Left
-        VideoMemory[y*80 + 79] = 0x0F00 | 0xBA; // Right
-    }
-}
-
-void printCentered(char* text, int line, uint8_t color = 0x0F)
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    int len = 0;
-    
-    // Calculate length
-    for(int i = 0; text[i] != '\0'; i++) len++;
-    
-    int start_x = (80 - len) / 2;
-    for(int i = 0; i < len; i++) {
-        VideoMemory[line*80 + start_x + i] = (color << 8) | text[i];
-    }
-}
-
-void printAt(char* text, int x, int y, uint8_t color = 0x0F)
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    for(int i = 0; text[i] != '\0'; i++) {
-        VideoMemory[y*80 + x + i] = (color << 8) | text[i];
-    }
-}
-
-void displayMainMenu()
-{
-    clearScreen();
-    drawBorder();
-    
-    printCentered("HE DIEU HANH TINH TOAN PHUONG TRINH BAC 2", 2, 0x0E);
-    printCentered("========================================", 3, 0x0E);
-    
-    printCentered("MENU CHINH", 6, 0x0B);
-    printCentered("----------", 7, 0x0B);
-    
-    printAt("  [1] Giai Phuong Trinh Bac 2", 25, 10, 0x0A);
-    printAt("  [2] Huong Dan Su Dung", 25, 12, 0x0A);  
-    printAt("  [3] Thong Tin Phat Trien", 25, 14, 0x0A);
-    printAt("  [4] Shutdown", 25, 16, 0x0A);
-    
-    printCentered("Nhan phim tuong ung de chon chuc nang", 20, 0x07);
-    printCentered("Phat trien boi: Nhat + Ngoc + Sang + Minh + Quynh", 22, 0x08);
-}
-
-void displayHelpScreen()
-{
-    clearScreen();
-    drawBorder();
-    
-    printCentered("HUONG DAN SU DUNG", 2, 0x0E);
-    printCentered("=================", 3, 0x0E);
-    
-    printAt("Phuong trinh bac 2 co dang: ax^2 + bx + c = 0", 15, 6, 0x0F);
-    printAt("Trong do:", 15, 8, 0x0B);
-    printAt("  - a: He so cua x^2 (a khac 0)", 15, 9, 0x0A);
-    printAt("  - b: He so cua x", 15, 10, 0x0A);
-    printAt("  - c: Hang so tu do", 15, 11, 0x0A);
-    
-    printAt("Cac phim dieu khien:", 15, 14, 0x0B);
-    printAt("  - Enter: Xac nhan nhap", 15, 15, 0x0A);
-    printAt("  - Backspace: Xoa ky tu", 15, 16, 0x0A);
-    printAt("  - ESC: Quay lai menu chinh", 15, 17, 0x0A);
-    printAt("  - R: Reset de giai phuong trinh moi", 15, 18, 0x0A);
-    
-    printCentered("Nhan ESC de quay lai menu chinh", 22, 0x0C);
-}
-
-void displayAboutScreen()
-{
-    clearScreen();
-    drawBorder();
-    
-    printCentered("THONG TIN PHAT TRIEN", 2, 0x0E);
-    printCentered("====================", 3, 0x0E);
-    
-    printCentered("HE DIEU HANH MYOS - PHIEN BAN 2.0", 6, 0x0B);
-
-    
-    
-    printAt("Nhom phat trien:", 25, 9, 0x0F);
-    printAt("  - Nhat: Kernel & Memory Management", 25, 11, 0x0A);
-    printAt("  - Ngoc: Keyboard Driver & Input", 25, 12, 0x0A);
-    printAt("  - Sang: Math Library & Algorithms", 25, 13, 0x0A);
-    printAt("  - Minh: Interface & Display", 25, 14, 0x0A);
-    printAt("  - Quynh: Testing & Documentation", 25, 15, 0x0A);
-    
-    printAt("Tinh nang:", 25, 17, 0x0F);
-    printAt("  - Giai phuong trinh bac 2", 25, 18, 0x0A);
-    printAt("  - Giao dien tieng Viet", 25, 19, 0x0A);
-    printAt("  - Xu ly so nguyen va phan thap phan", 25, 20, 0x0A);
-    
-    printCentered("Nhan ESC de quay lai menu chinh", 22, 0x0C);
-}
-// Print integer with sign
-void printInt(int32_t num)
-{
-    if(num < 0) {
-        printf("-");
-        num = -num;
-    }
-    
-    char buffer[12];
-    int pos = 0;
-    
-    if(num == 0) {
-        printf("0");
-        return;
-    }
-    
-    while(num > 0) {
-        buffer[pos++] = '0' + (num % 10);
-        num /= 10;
-    }
-    
-    for(int i = pos - 1; i >= 0; i--) {
-        char temp[2] = {buffer[i], '\0'};
-        printf(temp);
-    }
-}
-
-void printIntAt(int32_t num, int x, int y, uint8_t color = 0x0F)
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    char buffer[12];
-    int pos = 0;
-    
-    if(num < 0) {
-        VideoMemory[y*80 + x] = (color << 8) | '-';
-        x++;
-        num = -num;
-    }
-    
-    if(num == 0) {
-        VideoMemory[y*80 + x] = (color << 8) | '0';
-        return;
-    }
-    
-    while(num > 0) {
-        buffer[pos++] = '0' + (num % 10);
-        num /= 10;
-    }
-    
-    for(int i = pos - 1; i >= 0; i--) {
-        VideoMemory[y*80 + x++] = (color << 8) | buffer[i];
-    }
-}
-
-void displayQuadraticInterface()
-{
-    clearScreen();
-    drawBorder();
-    
-    printCentered("GIAI PHUONG TRINH BAC 2", 2, 0x0E);
-    printCentered("======================", 3, 0x0E);
-    
-    printAt("Dang tong quat: ax^2 + bx + c = 0", 22, 5, 0x0B);
-
-    switch(current_state) {
-        case WAITING_A:
-            printAt("Nhap he so a (a != 0): ", 10, 8, 0x0F);
-            break;
-        case WAITING_B:
-            printAt("He so a = ", 10, 8, 0x0A);
-            printIntAt(coeff_a, 20, 8, 0x0E);
-            printAt("Nhap he so b: ", 10, 10, 0x0F);
-            break;
-        case WAITING_C:
-            printAt("He so a = ", 10, 8, 0x0A);
-            printIntAt(coeff_a, 20, 8, 0x0E);
-            printAt("He so b = ", 10, 9, 0x0A);
-            printIntAt(coeff_b, 20, 9, 0x0E);
-            printAt("Nhap he so c: ", 10, 11, 0x0F);
-            break;
-        case SHOWING_RESULT:
-            // Display equation with actual values
-            printAt("Phuong trinh: ", 10, 8, 0x0B);
-            printIntAt(coeff_a, 24, 8, 0x0E);
-            printAt("x^2 + ", 27, 8, 0x0B);
-            printIntAt(coeff_b, 33, 8, 0x0E);
-            printAt("x + ", 36, 8, 0x0B);
-            printIntAt(coeff_c, 40, 8, 0x0E);
-            printAt(" = 0", 43, 8, 0x0B);
-            
-            QuadraticResult result = solveQuadratic(coeff_a, coeff_b, coeff_c);
-            
-            if(!result.hasRealRoots) {
-                printAt("KET QUA: Phuong trinh vo nghiem", 10, 12, 0x0C);
-                printAt("(Discriminant < 0)", 10, 13, 0x0C);
-            } else if(result.discriminant == 0) {
-                printAt("KET QUA: Nghiem kep", 10, 12, 0x0A);
-                printAt("x = ", 10, 13, 0x0A);
-                printIntAt(result.x1_int, 14, 13, 0x0E);
-                if(result.x1_frac > 0) {
-                    printAt(".", 17, 13, 0x0E);
-                    if(result.x1_frac < 100) printAt("0", 18, 13, 0x0E);
-                    if(result.x1_frac < 10) printAt("0", 19, 13, 0x0E);
-                    printIntAt(result.x1_frac, result.x1_frac < 100 ? (result.x1_frac < 10 ? 20 : 19) : 18, 13, 0x0E);
-                }
-            } else {
-                printAt("KET QUA: Co 2 nghiem phan biet", 10, 12, 0x0A);
-                printAt("x1 = ", 10, 13, 0x0A);
-                printIntAt(result.x1_int, 15, 13, 0x0E);
-                if(result.x1_frac > 0) {
-                    printAt(".", 18, 13, 0x0E);
-                    if(result.x1_frac < 100) printAt("0", 19, 13, 0x0E);
-                    if(result.x1_frac < 10) printAt("0", 20, 13, 0x0E);
-                    printIntAt(result.x1_frac, result.x1_frac < 100 ? (result.x1_frac < 10 ? 21 : 20) : 19, 13, 0x0E);
-                }
-                
-                printAt("x2 = ", 10, 14, 0x0A);
-                printIntAt(result.x2_int, 15, 14, 0x0E);
-                if(result.x2_frac > 0) {
-                    printAt(".", 18, 14, 0x0E);
-                    if(result.x2_frac < 100) printAt("0", 19, 14, 0x0E);
-                    if(result.x2_frac < 10) printAt("0", 20, 14, 0x0E);
-                    printIntAt(result.x2_frac, result.x2_frac < 100 ? (result.x2_frac < 10 ? 21 : 20) : 19, 14, 0x0E);
-                }
-            }
-            
-            printCentered("Nhan 'r' de giai lai, ESC de ve menu", 20, 0x0C);
-            break;
-    }
-    
-    if(current_state >= WAITING_A && current_state <= WAITING_C) {
-        printCentered("Nhan Enter de xac nhan, ESC de ve menu", 20, 0x07);
-    }
-}
-
-void displayCurrentInput()
-{
-    uint16_t* VideoMemory = (uint16_t*)0xb8000;
-    
-    // Determine input position based on current state
-    int input_x = (current_state == WAITING_A) ? 33 : 
-                  (current_state == WAITING_B) ? 24 : 24;
-    int input_y = (current_state == WAITING_A) ? 8 : 
-                  (current_state == WAITING_B) ? 10 : 11;
-    
-    // Clear input area (20 characters)
-    for(int i = 0; i < 20; i++) {
-        VideoMemory[input_y*80 + input_x + i] = 0x0720;
-    }
-    
-    // Display current input
-    for(int i = 0; i < input_pos; i++) {
-        VideoMemory[input_y*80 + input_x + i] = 0x0F00 | input_buffer[i];
-    }
-    
-    // Show blinking cursor
-    VideoMemory[input_y*80 + input_x + input_pos] = 0x7000 | '_';
-}
-
-void shutdown()
-{
-    // Lệnh đặc biệt cho QEMU
-    Port16Bit port(0x604);
-    port.Write(0x2000);
-}
-
-
+// Xử lí sự kiện keyboard cho OS
 class PrintfKeyboardEventHandler : public KeyboardEventHandler
 {
 public:
     void OnKeyDown(char c)
     {
-        // Handle menu navigation
+        // Xử lí menu chính
         if(current_state == MAIN_MENU) {
             switch(c) {
                 case '1':
@@ -475,20 +88,20 @@ public:
                     return;
                 case '4':
                     printf("Shutting down...\n");
-                    shutdown(); // shutdown voi qemu
+                    shutdown(); // shutdown với qemu
                     return;
             }
             return;
         }
         
-        // Handle ESC key - go back to main menu
+        // Xử lí ESC key - quay về menu chính
         if(c == 27) { // ESC key
             current_state = MAIN_MENU;
             displayMainMenu();
             return;
         }
         
-        // Handle help and about screens
+        // Xử lí help và about screen
         if(current_state == HELP_SCREEN || current_state == ABOUT_SCREEN) {
             if(c == 27) { // ESC
                 current_state = MAIN_MENU;
@@ -497,10 +110,10 @@ public:
             return;
         }
         
-        // Handle result screen
+        // Xử lí result screen
         if(current_state == SHOWING_RESULT) {
             if(c == 'r' || c == 'R') {
-                // Reset for new equation
+                // Reset cho phương trình mới
                 current_state = WAITING_A;
                 input_pos = 0;
                 coeff_a = coeff_b = coeff_c = 0;
@@ -511,16 +124,16 @@ public:
             return;
         }
         
-        // Handle input for coefficients
+        // Xử lí input cho hệ số
         if(current_state >= WAITING_A && current_state <= WAITING_C) {
             
-            // Handle Enter key
+            // Enter key
             if(c == '\n' || c == '\r') {
                 if(input_pos > 0) {
                     input_buffer[input_pos] = '\0';
                     int32_t value = stringToInt(input_buffer, input_pos);
                     
-                    // Validate coefficient a
+                    // Check validate hệ số a != 0
                     if(current_state == WAITING_A && value == 0) {
                         printAt("Loi: He so a phai khac 0!", 10, 15, 0x0C);
                         return;
@@ -550,7 +163,7 @@ public:
                 }
             }
             
-            // Handle backspace
+            // sự kiện backspace
             if(c == '\b' || c == 127) {
                 if(input_pos > 0) {
                     input_pos--;
@@ -560,7 +173,7 @@ public:
                 return;
             }
             
-            // Handle numbers and minus sign
+            // sự kiện nhập số và dấu trừ
             if((c >= '0' && c <= '9') || (c == '-' && input_pos == 0)) {
                 if(input_pos < 15) {
                     input_buffer[input_pos++] = c;
@@ -571,6 +184,8 @@ public:
         }
     }
 };
+
+// === KERNEL INITIALIZATION ===
 
 typedef void (*constructor)();
 extern "C" constructor start_ctors;
@@ -583,60 +198,60 @@ extern "C" void callConstructors()
 
 extern "C" void kernelMain(const void* multiboot_structure, uint32_t /*multiboot_magic*/)
 {
-    // Clear screen and show loading message
+    // === BOOT SCREEN ===
+    displayBootScreen();
 
-    printAt("                                                                     ", 1, 2, 0x0E);
-    printAt("                                             @@@  #@#                ", 1, 3, 0x0E);
-    printAt("                                          %@@@@@@@@                  ", 1, 4, 0x0E);
-    printAt("                                   -@@@@@@@@@@@@@                    ", 1, 5, 0x0E);
-    printAt("                                 @@@@+=*@@@@@@@@                     ", 1, 6, 0x0E);
-    printAt("                           -++- @  _ :@@@@%=@@@@                     ", 1, 7, 0x0E);
-    printAt("                 .@@%@@::######*    +=  _  @=#@@                     ", 1, 8, 0x0E);
-    printAt("                +@=@+====@###########@#    @==*@                     ", 1, 9, 0x0E);
-    printAt("                @+#=# *==#############@*##+===@@@@@@@= #:            ", 1, 10, 0x0E);
-    printAt("                @==+: - +=############@==========%###+@*             ", 1, 11, 0x0E);
-    printAt("                @==+- - @==@#######@+======*@@@#@+=%*@@+             ", 1, 12, 0x0E);
-    printAt("                =*==% -    +%+==+=====+#@#.   @   *=#+@#@%           ", 1, 13, 0x0E);
-    printAt("                 #+==%*    -    +@#     +     =  =*=%+@##            ", 1, 14, 0x0E);
-    printAt("                  =%==*+   -     .      +       @+====#%             ", 1, 15, 0x0E);
-    printAt("                    *%==*+ %     .      %    +%*====#%               ", 1, 16, 0x0E);
-    printAt("                      -%===%+   ..      % .*#====+@.                 ", 1, 17, 0x0E);
-    printAt("                        @======+#@@@@@%*+========@                   ", 1, 18, 0x0E);
-    printAt("                         %=======================@                   ", 1, 19, 0x0E);
-    printAt("                                                                     ", 1, 20, 0x0E);
-    printAt("                                                                     ", 1, 21, 0x0E);
-    printAt("                      Dang khoi dong he dieu hanh...\n               ", 1, 22, 0x0E);
-
-
-    // Chờ 2 giây (tương đối)
+    // Chờ 2s
     for (volatile int i = 0; i < 1000000000; ++i);
 
-
-
+    // === SYSTEM INITIALIZATION ===
+    
+    // Khởi tạo GDT để quản lý các segment bộ nhớ trong chế độ protected mode của x86
     GlobalDescriptorTable gdt;
     
+    // Khởi tạo Memory Management để quản lý cấp phát bộ nhớ động cho kernel
+    // *memupper là lượng RAM trống phía trên low memory (thông tin lấy từ multiboot).
+    // heap là lượng RAM dành cho kernel
+    // MemoryManager là class quản lý bộ nhớ động cho kernel
     uint32_t* memupper = (uint32_t*)(((size_t)multiboot_structure) + 8);
     size_t heap = 10*1024*1024;
     MemoryManager memoryManager(heap, (*memupper)*1024 - heap - 10*1024);
     
+    // Khởi tạo Task Manager để quản lý đa nhiệm (nhiều task cùng chạy)
     TaskManager taskManager;
+    
+    // 	•	Quản lý các ngắt phần cứng và phần mềm.
+	// •	0x20 là offset vector cho interrupt.
+	// •	Kết nối với GDT và TaskManager để hỗ trợ ngắt đa nhiệm.
     InterruptManager interrupts(0x20, &gdt, &taskManager);
     
+    // === DRIVER INITIALIZATION ===
+    
+    // Khởi tạo Driver Manager để quản lý các driver thiết bị
     DriverManager drvManager;
     
+    // Khởi tạo KeyboardEventHandler để xử lý sự kiện bàn phím
     PrintfKeyboardEventHandler kbhandler;
     KeyboardDriver keyboard(&interrupts, &kbhandler);
     drvManager.AddDriver(&keyboard);
     
+    // Kích hoạt tất cả các driver
     drvManager.ActivateAll();
     
-    // Initialize interface with main menu
+    // === START APPLICATION ===
+    
+    // Hiển thị menu chính
     displayMainMenu();
     
+    // Kích hoạt các interrupt
     interrupts.Activate();
     
+    // === MAIN LOOP ===
+    // OS đang chạy!
     while(1)
     {
-        // Keep the OS running
+        // The OS is now running!
+        // All interactions are handled by the keyboard event handler
+        // in app_logic.cpp
     }
-}
+} 

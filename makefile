@@ -1,30 +1,15 @@
-# sudo apt-get install g++ binutils libc6-dev-i386
-# sudo apt-get install VirtualBox grub-legacy xorriso
-
-CC = i686-elf-gcc
-AS = i686-elf-as
-LD = i686-elf-ld
-GRUB_MKRESCUE = i686-elf-grub-mkrescue
+# Các công cụ bạn sử dụng để biên dịch và build hệ điều hành, tất cả đều dành cho hệ 32-bit.
+CC = i686-elf-gcc # Trình biên dịch C cho hệ điều hành 32-bit
+AS = i686-elf-as # Trình biên dịch Assembly
+LD = i686-elf-ld # Trình liên kết (Linker)
+GRUB_MKRESCUE = i686-elf-grub-mkrescue # Tạo ISO bootable
 
 GCCPARAMS = -m32 -Iinclude -fno-use-cxa-atexit -nostdlib -fno-builtin -fno-rtti -fno-exceptions -fno-leading-underscore -Wno-write-strings
 ASPARAMS = --32
 LDPARAMS = -melf_i386
 
-objects = obj/loader.o \
-          obj/gdt.o \
-          obj/memorymanagement.o \
-          obj/drivers/driver.o \
-          obj/hardwarecommunication/port.o \
-          obj/hardwarecommunication/interruptstubs.o \
-          obj/hardwarecommunication/interrupts.o \
-          obj/syscalls.o \
-          obj/multitasking.o \
-          obj/drivers/keyboard.o \
-          obj/drivers/vga.o \
-          obj/kernel.o
-
 # Clean refactored version objects  
-objects_clean = obj/loader.o \
+myos = obj/loader.o \
           obj/gdt.o \
           obj/memorymanagement.o \
           obj/drivers/driver.o \
@@ -39,76 +24,42 @@ objects_clean = obj/loader.o \
           obj/modules/math_functions.o \
           obj/modules/ui_functions.o \
           obj/modules/app_logic.o \
-          obj/kernel_clean.o 
+          obj/kernel.o 
 
+run: myos.iso
 
+qemu-myos: myos.iso
+	qemu-system-i386 -cdrom myos.iso -m 128M
 
-run: mykernel.iso
-	(killall VirtualBox && sleep 1) || true
-	VirtualBox --startvm 'My Operating System' &
-
-qemu: mykernel.iso
-	qemu-system-i386 -cdrom mykernel.iso -m 128M
-
-qemu-clean: mykernel_clean.iso
-	qemu-system-i386 -cdrom mykernel_clean.iso -m 128M
-
-qemu-debug: mykernel.iso
-	qemu-system-i386 -cdrom mykernel.iso -m 128M -s -S
-
+# compile cpp to o
 obj/%.o: src/%.cpp
 	mkdir -p $(@D)
 	$(CC) $(GCCPARAMS) -c -o $@ $<
 
+# compile assembly to o
 obj/%.o: src/%.s
 	mkdir -p $(@D)
 	$(AS) $(ASPARAMS) -o $@ $<
 
-mykernel.bin: linker.ld $(objects)
-	$(LD) $(LDPARAMS) -T $< -o $@ $(objects)
+# link all o to bin
+myos.bin: linker.ld $(myos)
+	$(LD) $(LDPARAMS) -T $< -o $@ $(myos)
 
-mykernel.iso: mykernel.bin
+myos.iso: myos.bin
 	mkdir iso
 	mkdir iso/boot
 	mkdir iso/boot/grub
-	cp mykernel.bin iso/boot/mykernel.bin
+	cp myos.bin iso/boot/myos.bin
 	echo 'set timeout=0'                      > iso/boot/grub/grub.cfg
 	echo 'set default=0'                     >> iso/boot/grub/grub.cfg
 	echo ''                                  >> iso/boot/grub/grub.cfg
-	echo 'menuentry "My Operating System" {' >> iso/boot/grub/grub.cfg
-	echo '  multiboot /boot/mykernel.bin'    >> iso/boot/grub/grub.cfg
+	echo 'menuentry "MyOS Clean Refactored" {' >> iso/boot/grub/grub.cfg
+	echo '  multiboot /boot/myos.bin'    >> iso/boot/grub/grub.cfg
 	echo '  boot'                            >> iso/boot/grub/grub.cfg
 	echo '}'                                 >> iso/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) --output=mykernel.iso iso
+	$(GRUB_MKRESCUE) --output=myos.iso iso
 	rm -rf iso
-
-mykernel_clean.bin: linker.ld $(objects_clean)
-	$(LD) $(LDPARAMS) -T $< -o $@ $(objects_clean)
-
-mykernel_clean.iso: mykernel_clean.bin
-	mkdir iso_clean
-	mkdir iso_clean/boot
-	mkdir iso_clean/boot/grub
-	cp mykernel_clean.bin iso_clean/boot/mykernel.bin
-	echo 'set timeout=0'                      > iso_clean/boot/grub/grub.cfg
-	echo 'set default=0'                     >> iso_clean/boot/grub/grub.cfg
-	echo ''                                  >> iso_clean/boot/grub/grub.cfg
-	echo 'menuentry "MyOS Clean Refactored" {' >> iso_clean/boot/grub/grub.cfg
-	echo '  multiboot /boot/mykernel.bin'    >> iso_clean/boot/grub/grub.cfg
-	echo '  boot'                            >> iso_clean/boot/grub/grub.cfg
-	echo '}'                                 >> iso_clean/boot/grub/grub.cfg
-	$(GRUB_MKRESCUE) --output=mykernel_clean.iso iso_clean
-	rm -rf iso_clean
-
-install: mykernel.bin
-	sudo cp $< /boot/mykernel.bin
 
 .PHONY: clean
 clean:
-	rm -rf obj mykernel.bin mykernel.iso mykernel_clean.bin mykernel_clean.iso
-
-# Build targets
-.PHONY: original clean-refactored all-versions
-original: mykernel.iso
-clean-refactored: mykernel_clean.iso
-all-versions: original clean-refactored
+	rm -rf obj myos.bin myos.iso
